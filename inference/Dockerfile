@@ -1,0 +1,45 @@
+# Edit the base image here, e.g., to use
+# TENSORFLOW (https://hub.docker.com/r/tensorflow/tensorflow/)
+# or a different PYTORCH (https://hub.docker.com/r/pytorch/pytorch/) base image
+FROM pytorch/pytorch
+
+RUN apt-get update && apt-get install -y git
+RUN groupadd -r algorithm && useradd -m --no-log-init -r -g algorithm algorithm
+
+RUN mkdir -p /opt/algorithm /input /output \
+    && chown algorithm:algorithm /opt/algorithm /input /output
+
+USER algorithm
+
+WORKDIR /opt/algorithm
+
+ENV PATH="/home/algorithm/.local/bin:${PATH}"
+
+RUN python -m pip install --user -U pip
+
+
+
+#COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
+#RUN python -m pip install --user -r requirements.txt
+RUN python -m pip install --user monai
+RUN python -m pip install --user git+https://github.com/JoHof/lungmask
+RUN python -m pip install --user pandas
+RUN python -m pip install --user scipy
+RUN python -m pip install --user scikit-learn
+RUN python -m pip install --user scikit-image
+RUN python -m pip install --user simpleitk
+RUN python -m pip install --user tqdm
+RUN python -m pip install --user evalutils
+
+COPY --chown=algorithm:algorithm process.py /opt/algorithm/
+COPY --chown=algorithm:algorithm utils.py /opt/algorithm/
+COPY --chown=algorithm:algorithm artifact/ /opt/algorithm/artifact/
+COPY --chown=algorithm:algorithm classification/ /opt/algorithm/classification/
+COPY --chown=algorithm:algorithm segmentation/ /opt/algorithm/segmentation/
+
+ENTRYPOINT python -m process $0 $@
+
+## ALGORITHM LABELS ##
+
+# These labels are required
+LABEL nl.diagnijmegen.rse.algorithm.name=STOICAlgorithm
